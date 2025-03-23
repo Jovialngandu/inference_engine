@@ -1,0 +1,19 @@
+*.O
+*.out
+*.exe
+*.a
+*.so
+*.log
+*.swp
+.DS_STORE
+*.cbp
+*.depend
+*.layout
+*.layout.save
+VS code
+.vscode/
+Makefile automatique
+Makefile
+build
+bin
+obj
