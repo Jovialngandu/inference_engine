@@ -29,7 +29,7 @@ typedef struct {
 typedef struct {
    int id;
    char name[100];
-   int BC_id;
+   int knowledge_id;
    int animal_class_id;
    char description[100];
 } Rule;
@@ -37,7 +37,7 @@ typedef struct {
 typedef struct {
    int id;
    char name[100];
-   int BC_id;
+   int knowledge_id;
    int animal_class_id;
    char description[100];
 } Fact;
