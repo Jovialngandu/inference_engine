@@ -8,36 +8,45 @@
 int main()
 {
 
+    int numCharacters;
+    int matchingFactsSize;
+    int numProperties;
+    int selectedPropertiesSize;
+
+
     cJSON *datas=pythonExecute();
 
-    int tailleCharacteristics;
-    int tailleProperties;
-    Character *caracteristiques = (Character *)get(datas, "Characteristic", &tailleCharacteristics);
-    Property *property = (Property *)get(datas, "Property", &tailleProperties);
-    characterUserValue* userValues= menu(caracteristiques,tailleCharacteristics,property,tailleProperties);
+    Character *characters = (Character *)get(datas, "Characteristic", &numCharacters);
+    Property *properties = (Property *)get(datas, "Property", &numProperties);
 
+    if (characters && properties) {
+        Property *selectedProperties = getUserSelectedProperties(characters, numCharacters, properties, numProperties, &selectedPropertiesSize);
 
-    // for(size_t z = 0; z <tailleCharacteristics ; z++)
-    // {
-    //    printf("\n character id :%d- property id: %d \n",userValues[z].characterId,userValues[z].propertyId);
-    // }
+        if (selectedProperties) {
 
+            Fact *matchingFacts = findFactsWithAllProperties(datas, selectedProperties, selectedPropertiesSize, &matchingFactsSize);
 
-    // characterUserValue userValues[] = {{1, 1}, {1, 2}}; // Exemple de tableau userValues
-    int userValuesSize = sizeof(userValues) / sizeof(userValues[0]);
-    int matchingFactsSize;
-    Fact *matchingFacts = getMatchingFacts(datas, userValues, userValuesSize, &matchingFactsSize);
+            if (matchingFacts) {
+                printf("Faits correspondants trouvés (%d):\n", matchingFactsSize);
+                for (int i = 0; i < matchingFactsSize; i++) {
+                    printf("ID: %d, Nom: %s, Description: %s\n",
+                        matchingFacts[i].id, matchingFacts[i].name, matchingFacts[i].description);
+                }
+                free(matchingFacts);
+            } else {
+                printf("Aucun fait trouvé\n");
+            }
 
-    if (matchingFacts) {
-        printf("Faits correspondants trouvés : %d\n", matchingFactsSize);
-        for (int i = 0; i < matchingFactsSize; i++) {
-            printf("Fait ID: %d, Nom: %s\n", matchingFacts[i].id, matchingFacts[i].name);
+            free(selectedProperties);
+        } else {
+                printf("\nAucune propriété sélectionnée.\n");
         }
-        free(matchingFacts);
+        free(characters);
+        free(properties);
     } else {
-        printf("Aucun fait correspondant trouvé.\n");
+        fprintf(stderr, "Erreur lors de la récupération des caractéristiques ou des propriétés depuis la base de connaissance.\n");
     }
 
     cJSON_Delete(datas);
-    return 0;
+  
 }
