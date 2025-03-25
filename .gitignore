@@ -17,3 +17,6 @@ Makefile
 build
 bin
 obj
+*.sqlite
+*.db
+*py
