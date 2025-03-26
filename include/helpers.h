@@ -764,5 +764,82 @@ void freeMatchesList(MatchesList* list) {
 
 
 
+// Fonction pour afficher le nom de la Rule correspondant à chaque MatchesList
+void displayRuleNamesForMatchesList(Rule* rules, int numRules, MatchesList* matchList) {
+    if (rules == NULL || matchList == NULL) {
+        printf("Error: Rules array or MatchesList is NULL.\n");
+        return;
+    }
+
+    printf("Rule names for MatchesList:\n");
+    for (int i = 0; i < matchList->size; i++) {
+        int ruleIdToFind = matchList->matches[i].rule_id;
+        const char* ruleName = "Rule not found";
+
+        for (int j = 0; j < numRules; j++) {
+            if (rules[j].id == ruleIdToFind) {
+                ruleName = rules[j].name;
+                break;
+            }
+        }
+        printf("  Match (Rule ID: %d) corresponds to Rule: %s\n", ruleIdToFind, ruleName);
+    }
+}
+
+
+
+void displayUniqueRuleNamesForMatchesList(Rule* rules, int numRules, MatchesList* matchList) {
+    if (rules == NULL || matchList == NULL) {
+        printf("Error: Rules array or MatchesList is NULL.\n");
+        return;
+    }
+
+    printf("Unique Rule names for MatchesList:\n");
+
+    // Tableau pour garder une trace des rule_id déjà affichés
+    int *displayedRuleIds = NULL;
+    int displayedCount = 0;
+    int displayedCapacity = 0;
+
+    for (int i = 0; i < matchList->size; i++) {
+        int ruleIdToFind = matchList->matches[i].rule_id;
+        int alreadyDisplayed = 0;
+
+        // Vérifier si ce rule_id a déjà été affiché
+        for (int j = 0; j < displayedCount; j++) {
+            if (displayedRuleIds[j] == ruleIdToFind) {
+                alreadyDisplayed = 1;
+                break;
+            }
+        }
+
+        // Si le rule_id n'a pas encore été affiché, rechercher et afficher le nom de la Rule
+        if (!alreadyDisplayed) {
+            const char* ruleName = "Rule not found";
+            for (int j = 0; j < numRules; j++) {
+                if (rules[j].id == ruleIdToFind) {
+                    ruleName = rules[j].name;
+                    break;
+                }
+            }
+            printf("  Rule ID: %d corresponds to Rule: %s\n", ruleIdToFind, ruleName);
+
+            // Ajouter le rule_id au tableau des IDs affichés
+            if (displayedCount >= displayedCapacity) {
+                displayedCapacity = (displayedCapacity == 0) ? 5 : displayedCapacity * 2;
+                int *newDisplayedIds = (int*)realloc(displayedRuleIds, displayedCapacity * sizeof(int));
+                if (newDisplayedIds == NULL) {
+                    perror("Failed to reallocate displayedRuleIds array");
+                    free(displayedRuleIds);
+                    return;
+                }
+                displayedRuleIds = newDisplayedIds;
+            }
+            displayedRuleIds[displayedCount++] = ruleIdToFind;
+        }
+    }
+
+    free(displayedRuleIds);
+}
 
 #endif 
