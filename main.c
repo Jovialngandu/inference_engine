@@ -23,18 +23,41 @@ int main()
         Property *selectedProperties = getUserSelectedProperties(characters, numCharacters, properties, numProperties, &selectedPropertiesSize);
 
         if (selectedProperties) {
+            system("cls");
+           for (int i = 0; i < selectedPropertiesSize; i++) {
+                printf("_ : %s\n",selectedProperties[i].libelle);
+             }        
+        // if (allPropertyRules) {
+        //     printf("PropertyRules regroupées par Property:\n");
+        //     for (int i = 0; i < allPropertyRules->size; i++) {
+        //         printf("\nProperty ID: %d, Libelle: %s\n", properties[i].id, properties[i].libelle);
+        //         afficherPropertyRuleArray(allPropertyRules->data[i]);
+        //     }
+        //     freePropertyRuleArrayList(allPropertyRules);
 
             Fact *matchingFacts = findFactsWithAllProperties(datas, selectedProperties, selectedPropertiesSize, &matchingFactsSize);
 
             if (matchingFacts) {
                 printf("Faits correspondants trouvés (%d):\n", matchingFactsSize);
                 for (int i = 0; i < matchingFactsSize; i++) {
-                    printf("ID: %d, Nom: %s, Description: %s\n",
-                        matchingFacts[i].id, matchingFacts[i].name, matchingFacts[i].description);
+                    printf("__%s\n",matchingFacts[i].description);
                 }
                 free(matchingFacts);
             } else {
-                printf("Aucun fait trouvé\n");
+                PropertyRuleArrayList* allPropertyRules = generatePropertyRulesByPropertyFromJSON(datas, properties, numProperties);
+                PropertyRuleArrayList* groupedByRule = groupPropertyRulesByRuleId(allPropertyRules);
+                MatchesList *rematch= matchPropertyRuleArray(selectedProperties,selectedPropertiesSize,groupedByRule);
+
+                int numRules;
+
+                Rule *rules = (Rule *)get(datas, "Rule", &numRules);
+                
+                // printMatchesList(rematch);
+
+                // printf("Affichage des noms de règles pour chaque MatchesList:\n");
+                // displayRuleNamesForMatchesList(rules, numRules, rematch);                // afficherPropertyRuleArrayList(groupedByRule);
+                displayUniqueRuleNamesForMatchesList(rules, numRules, rematch);
+                freePropertyRuleArrayList(groupedByRule);
             }
 
             free(selectedProperties);

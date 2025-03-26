@@ -364,11 +364,11 @@ Property *getUserSelectedProperties(Character *characters, int numCharacters, Pr
         while (getchar() != '\n');
     }
 
-    printf("\n--- Récapitulatif des sélections ---:\n");
-    for (int i = 0; i < *selectedPropertiesSize; i++) {
-        printf("Caractéristique ID (via Property): %d -> Propriété sélectionnée: %s (ID: %d)\n",
-               selectedProperties[i].characteristic_id, selectedProperties[i].libelle, selectedProperties[i].id);
-    }
+    // printf("\n--- Récapitulatif des sélections ---:\n");
+    // for (int i = 0; i < *selectedPropertiesSize; i++) {
+    //     printf("Caractéristique ID (via Property): %d -> Propriété sélectionnée: %s (ID: %d)\n",
+    //            selectedProperties[i].characteristic_id, selectedProperties[i].libelle, selectedProperties[i].id);
+    // }
 
     return selectedProperties;
 }
@@ -424,6 +424,422 @@ Fact *findFactsWithAllProperties(cJSON *data, Property *selectedProperties, int 
     }
 
     return matchingFacts;
+}
+
+
+// Fonction pour initialiser un PropertyRuleArray
+
+PropertyRuleArray* initPropertyRuleArray() {
+    PropertyRuleArray* arr = (PropertyRuleArray*)malloc(sizeof(PropertyRuleArray));
+    if (arr == NULL) {
+        perror("Failed to allocate PropertyRuleArray");
+        return NULL;
+    }
+    arr->data = NULL;
+    arr->size = 0;
+    arr->capacity = 0;
+    return arr;
+}
+
+// Fonction pour ajouter un PropertyRule à un PropertyRuleArray
+void addPropertyRule(PropertyRuleArray* arr, PropertyRule rule) {
+    if (arr->size >= arr->capacity) {
+        arr->capacity = (arr->capacity == 0) ? 10 : arr->capacity * 2;
+        PropertyRule* newData = (PropertyRule*)realloc(arr->data, arr->capacity * sizeof(PropertyRule));
+        if (newData == NULL) {
+            perror("Failed to reallocate PropertyRuleArray");
+            return;
+        }
+        arr->data = newData;
+    }
+    arr->data[arr->size++] = rule;
+}
+
+// Fonction pour initialiser un PropertyRuleArrayList
+PropertyRuleArrayList* initPropertyRuleArrayList() {
+    PropertyRuleArrayList* arr = (PropertyRuleArrayList*)malloc(sizeof(PropertyRuleArrayList));
+    if (arr == NULL) {
+        perror("Failed to allocate PropertyRuleArrayList");
+        return NULL;
+    }
+    arr->data = NULL;
+    arr->size = 0;
+    arr->capacity = 0;
+    return arr;
+}
+
+
+void addMatchesRuleArray(MatchesList* arr, Matches match) {
+  
+        // printf("%d",arr->size);
+        // arr->Matches[arr->size++] = match;
+}
+
+
+// Fonction pour ajouter un PropertyRuleArray à un PropertyRuleArrayList
+void addPropertyRuleArray(PropertyRuleArrayList* arr, PropertyRuleArray* propRules) {
+    if (arr->size >= arr->capacity) {
+        arr->capacity = (arr->capacity == 0) ? 5 : arr->capacity * 2;
+        PropertyRuleArray** newData = (PropertyRuleArray**)realloc(arr->data, arr->capacity * sizeof(PropertyRuleArray*));
+        if (newData == NULL) {
+            perror("Failed to reallocate PropertyRuleArrayList");
+            return;
+        }
+        arr->data = newData;
+    }
+    arr->data[arr->size++] = propRules;
+}
+
+
+// Fonction pour générer les PropertyRule par Property à partir des données JSON
+PropertyRuleArrayList* generatePropertyRulesByPropertyFromJSON(cJSON *data, Property properties[], int numProperties) {
+    PropertyRuleArrayList* result = initPropertyRuleArrayList();
+    if (result == NULL) return NULL;
+
+    int ruleCount = 0;
+    Rule *rules = (Rule *)get(data, "Rule", &ruleCount);
+
+    if (rules == NULL) {
+        fprintf(stderr, "Erreur: Impossible de récupérer le tableau 'Rule' du JSON.\n");
+        freePropertyRuleArrayList(result);
+        return NULL;
+    }
+
+    int propertyRuleCount = 0;
+    PropertyRule *allPropertyRulesJSON = (PropertyRule *)get(data, "PropertyRule", &propertyRuleCount);
+
+    if (allPropertyRulesJSON == NULL) {
+        fprintf(stderr, "Erreur: Impossible de récupérer le tableau 'PropertyRule' du JSON.\n");
+        free(rules);
+        freePropertyRuleArrayList(result);
+        return NULL;
+    }
+
+    for (int i = 0; i < numProperties; i++) {
+        Property currentProperty = properties[i];
+        PropertyRuleArray* propertyRulesForCurrentProperty = initPropertyRuleArray();
+        if (propertyRulesForCurrentProperty == NULL) continue;
+
+        for (int j = 0; j < propertyRuleCount; j++) {
+            if (allPropertyRulesJSON[j].property_id == currentProperty.id) {
+                addPropertyRule(propertyRulesForCurrentProperty, allPropertyRulesJSON[j]);
+            }
+        }
+        addPropertyRuleArray(result, propertyRulesForCurrentProperty);
+    }
+
+    free(rules);
+    free(allPropertyRulesJSON);
+
+    return result;
+}
+// Fonction pour libérer la mémoire allouée pour un PropertyRuleArray
+void freePropertyRuleArray(PropertyRuleArray* arr) {
+    if (arr) {
+        free(arr->data);
+        free(arr);
+    }
+}
+
+// Fonction pour libérer la mémoire allouée pour un PropertyRuleArrayList
+void freePropertyRuleArrayList(PropertyRuleArrayList* list) {
+    if (list) {
+        if (list->data) {
+            for (int i = 0; i < list->size; i++) {
+                freePropertyRuleArray(list->data[i]);
+            }
+            free(list->data);
+        }
+        free(list);
+    }
+}
+
+void afficherPropertyRuleArray(const PropertyRuleArray* arr) {
+    if (arr == NULL) {
+        printf("PropertyRuleArray est NULL.\n");
+        return;
+    }
+    printf("  Taille du PropertyRuleArray: %d\n", arr->size);
+    for (int i = 0; i < arr->size; i++) {
+        printf("    - ID: %d, Rule ID: %d, Property ID: %d, Condition: %s, Action: %s\n\n\n",
+               arr->data[i].id,
+               arr->data[i].rule_id,
+               arr->data[i].property_id,
+               arr->data[i].condition,
+               arr->data[i].action);
+    }
+}
+
+void afficherPropertyRuleArrayList(const PropertyRuleArrayList* list) {
+    if (list == NULL) {
+        printf("PropertyRuleArrayList est NULL.\n");
+        return;
+    }
+    printf("Taille du PropertyRuleArrayList: %d\n", list->size);
+    for (int i = 0; i < list->size; i++) {
+        printf("  --- Tableau de PropertyRule à l'index %d ---\n", i);
+        afficherPropertyRuleArray(list->data[i]);
+    }
+}
+
+
+PropertyRuleArrayList* groupPropertyRulesByRuleId(PropertyRuleArrayList* list) {
+    PropertyRuleArrayList* groupedResult = initPropertyRuleArrayList();
+    if (groupedResult == NULL || list == NULL) {
+        return NULL;
+    }
+
+    if (list->size == 0) {
+        return groupedResult;
+    }
+
+    int *processedRuleIds = NULL;
+    int processedCount = 0;
+    int processedCapacity = 0;
+
+    for (int i = 0; i < list->size; i++) {
+        PropertyRuleArray* currentPropertyRules = list->data[i];
+        for (int j = 0; j < currentPropertyRules->size; j++) {
+            int currentRuleId = currentPropertyRules->data[j].rule_id;
+            int alreadyProcessed = 0;
+            for (int k = 0; k < processedCount; k++) {
+                if (processedRuleIds[k] == currentRuleId) {
+                    alreadyProcessed = 1;
+                    break;
+                }
+            }
+
+            if (!alreadyProcessed) {
+                PropertyRuleArray* newRuleGroup = initPropertyRuleArray();
+                if (newRuleGroup == NULL) {
+                    freePropertyRuleArrayList(groupedResult);
+                    free(processedRuleIds);
+                    return NULL;
+                }
+
+                for (int x = 0; x < list->size; x++) {
+                    PropertyRuleArray* innerArray = list->data[x];
+                    for (int y = 0; y < innerArray->size; y++) {
+                        if (innerArray->data[y].rule_id == currentRuleId) {
+                            addPropertyRule(newRuleGroup, innerArray->data[y]);
+                        }
+                    }
+                }
+                addPropertyRuleArray(groupedResult, newRuleGroup);
+
+                if (processedCount >= processedCapacity) {
+                    processedCapacity = (processedCapacity == 0) ? 5 : processedCapacity * 2;
+                    int *newProcessedIds = (int*)realloc(processedRuleIds, processedCapacity * sizeof(int));
+                    if (newProcessedIds == NULL) {
+                        freePropertyRuleArrayList(groupedResult);
+                        free(processedRuleIds);
+                        return NULL;
+                    }
+                    processedRuleIds = newProcessedIds;
+                }
+                processedRuleIds[processedCount++] = currentRuleId;
+            }
+        }
+    }
+
+    free(processedRuleIds);
+    return groupedResult;
+}
+
+MatchesList* initMatchesList() {
+    MatchesList* list = (MatchesList*)malloc(sizeof(MatchesList));
+    if (list == NULL) {
+        perror("Failed to allocate MatchesList");
+        return NULL;
+    }
+    list->matches = NULL;
+    list->size = 0;
+    list->capacity = 0;
+    return list;
+}
+
+// Fonction pour trouver les Matches avec le nbrMatches le plus élevé
+MatchesList* findTopMatches(MatchesList* list) {
+    MatchesList* result = initMatchesList();
+    if (result == NULL || list == NULL || list->size == 0) {
+        return result; // Retourne une liste vide en cas d'erreur ou de liste d'entrée vide
+    }
+
+    int maxNbrMatches = -1; // Initialiser avec une valeur inférieure à toute nbrMatches possible
+
+    // Trouver la valeur maximale de nbrMatches
+    for (int i = 0; i < list->size; i++) {
+        if (list->matches[i].nbrMatches > maxNbrMatches) {
+            maxNbrMatches = list->matches[i].nbrMatches;
+        }
+    }
+
+    // Ajouter tous les Matches ayant la valeur maximale de nbrMatches à la liste de résultat
+    for (int i = 0; i < list->size; i++) {
+        if (list->matches[i].nbrMatches == maxNbrMatches) {
+            addMatches(result, list->matches[i]);
+        }
+    }
+
+    return result;
+}
+
+// Fonction pour afficher le contenu d'une MatchesList (pour le test)
+void printMatchesList(MatchesList* list) {
+    if (list == NULL) {
+        printf("MatchesList is NULL.\n");
+        return;
+    }
+    printf("MatchesList (size: %d):\n", list->size);
+    for (int i = 0; i < list->size; i++) {
+        printf("  Rule ID: %d, Nbr Matches: %d\n", list->matches[i].rule_id, list->matches[i].nbrMatches);
+    }
+}
+
+MatchesList* matchPropertyRuleArray(Property* properties, int propertiesSize,const PropertyRuleArrayList* arr) {
+
+    MatchesList* result = initMatchesList();
+    if (result == NULL) {
+        return 1;
+    }
+
+    for (int j = 0; j < arr->size; j++)
+    {
+        Matches match;
+        match.nbrMatches=0;
+        match.rule_id=arr->data[j]->data->rule_id;
+        for (int i = 0; i < arr->data[j]->size; i++) {
+            
+            for(int k = 0; k < propertiesSize; k++)
+            {
+                if(arr->data[j]->data[i].property_id==properties[k].id){
+                    match.nbrMatches++;                   
+                }
+            }
+
+        }
+
+        addMatches(result,match);
+    }
+    
+    // printMatchesList(result);
+
+    MatchesList* topMatchesList = findTopMatches(result);
+    // printf("\nListe des Matches avec le nbrMatches le plus élevé:\n");
+    // printMatchesList(topMatchesList);
+
+    freeMatchesList(result);
+    freeMatchesList(topMatchesList);
+    return topMatchesList;
+    
+}
+
+// Implémentation de la fonction pour ajouter un Matches à une MatchesList
+void addMatches(MatchesList* list, Matches match) {
+    if (list == NULL) {
+        fprintf(stderr, "Error: MatchesList pointer is NULL in addMatches.\n");
+        return;
+    }
+    if (list->size >= list->capacity) {
+        list->capacity = (list->capacity == 0) ? 10 : list->capacity * 2;
+        Matches* newMatches = (Matches*)realloc(list->matches, list->capacity * sizeof(Matches));
+        if (newMatches == NULL) {
+            perror("Failed to reallocate Matches array");
+            return;
+        }
+        list->matches = newMatches;
+    }
+    list->matches[list->size++] = match;
+}
+
+// Implémentation de la fonction pour libérer la mémoire d'une MatchesList
+void freeMatchesList(MatchesList* list) {
+    if (list) {
+        free(list->matches);
+        free(list);
+    }
+}
+
+
+
+
+
+// Fonction pour afficher le nom de la Rule correspondant à chaque MatchesList
+void displayRuleNamesForMatchesList(Rule* rules, int numRules, MatchesList* matchList) {
+    if (rules == NULL || matchList == NULL) {
+        printf("Error: Rules array or MatchesList is NULL.\n");
+        return;
+    }
+
+    printf("Rule names for MatchesList:\n");
+    for (int i = 0; i < matchList->size; i++) {
+        int ruleIdToFind = matchList->matches[i].rule_id;
+        const char* ruleName = "Rule not found";
+
+        for (int j = 0; j < numRules; j++) {
+            if (rules[j].id == ruleIdToFind) {
+                ruleName = rules[j].name;
+                break;
+            }
+        }
+        printf("  Match (Rule ID: %d) corresponds to Rule: %s\n", ruleIdToFind, ruleName);
+    }
+}
+
+
+
+void displayUniqueRuleNamesForMatchesList(Rule* rules, int numRules, MatchesList* matchList) {
+    if (rules == NULL || matchList == NULL) {
+        printf("Error: Rules array or MatchesList is NULL.\n");
+        return;
+    }
+
+    printf("Unique Rule names for MatchesList:\n");
+
+    // Tableau pour garder une trace des rule_id déjà affichés
+    int *displayedRuleIds = NULL;
+    int displayedCount = 0;
+    int displayedCapacity = 0;
+
+    for (int i = 0; i < matchList->size; i++) {
+        int ruleIdToFind = matchList->matches[i].rule_id;
+        int alreadyDisplayed = 0;
+
+        // Vérifier si ce rule_id a déjà été affiché
+        for (int j = 0; j < displayedCount; j++) {
+            if (displayedRuleIds[j] == ruleIdToFind) {
+                alreadyDisplayed = 1;
+                break;
+            }
+        }
+
+        // Si le rule_id n'a pas encore été affiché, rechercher et afficher le nom de la Rule
+        if (!alreadyDisplayed) {
+            const char* ruleName = "Rule not found";
+            for (int j = 0; j < numRules; j++) {
+                if (rules[j].id == ruleIdToFind) {
+                    ruleName = rules[j].name;
+                    break;
+                }
+            }
+            printf("  Rule ID: %d corresponds to Rule: %s\n", ruleIdToFind, ruleName);
+
+            // Ajouter le rule_id au tableau des IDs affichés
+            if (displayedCount >= displayedCapacity) {
+                displayedCapacity = (displayedCapacity == 0) ? 5 : displayedCapacity * 2;
+                int *newDisplayedIds = (int*)realloc(displayedRuleIds, displayedCapacity * sizeof(int));
+                if (newDisplayedIds == NULL) {
+                    perror("Failed to reallocate displayedRuleIds array");
+                    free(displayedRuleIds);
+                    return;
+                }
+                displayedRuleIds = newDisplayedIds;
+            }
+            displayedRuleIds[displayedCount++] = ruleIdToFind;
+        }
+    }
+
+    free(displayedRuleIds);
 }
 
 #endif 
