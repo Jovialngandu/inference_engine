@@ -61,4 +61,29 @@ typedef struct {
    char condition[200];
    char action[200];
 } PropertyRule;
+
+// Structure pour représenter un tableau de PropertyRule
+typedef struct {
+   PropertyRule *data;
+   int size;
+   int capacity;
+} PropertyRuleArray;
+
+// Structure pour représenter un tableau de PropertyRuleArray (le retour de notre fonction)
+typedef struct {
+   PropertyRuleArray **data;
+   int size;
+   int capacity;
+} PropertyRuleArrayList;
+
+typedef struct {
+   int rule_id;
+   int nbrMatches;
+} Matches;
+
+typedef struct {
+   Matches *matches;
+   int size;
+   int capacity;
+} MatchesList;
 #endif //STRUCTURE_H
